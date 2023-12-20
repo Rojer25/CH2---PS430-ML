@@ -1,9 +1,7 @@
 # CH2 - PS430-ML
 Machine Learning For Handsight
 
-# Team Members
-
-## Team ID : CH2 - PS430
+# Machine Learning Team Members
 
 <br>
 
