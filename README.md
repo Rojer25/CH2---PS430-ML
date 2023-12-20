@@ -7,7 +7,7 @@ Machine Learning For Handsight
 
 <br>
 
-| Name                       | Student ID  | Path                |
+| Name                       | Student ID  | LinkedIn                |
 | -------------------------- | ----------  | ------------------- |
 | Sani Alim                  | M108BSY0925 | <a href="https://www.linkedin.com/in/sani-alim-a262a1221/"><img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" /></a>    |
 | Fransisco Roger            | M108BSY1015 | <a href="https://www.linkedin.com/in/fransisco-roger-476020195/"><img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" /></a>    |
