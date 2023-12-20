@@ -1,7 +1,7 @@
 # CH2 - PS430-ML
 Machine Learning For Handsight
 
-# <img src="https://i.ibb.co/4pF0gkf/logoa.png" type='image' alt="Logo" width="10"> Machine Learning Team Members
+# <img src="https://i.ibb.co/4pF0gkf/logoa.png" type='image' alt="Logo" width="25"> Machine Learning Team Members
 
 <br>
 
