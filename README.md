@@ -14,11 +14,13 @@ Machine Learning For Handsight
 
 <br>
 
-This is one section.
 
+# Cloning Github
 ---
+git clone https://github.com/Rojer25/CH2---PS430-ML.git
 
-This is another section.
+
+
 
 
 
