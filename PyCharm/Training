@@ -1,0 +1,133 @@
+#MODEL TRAINNIG
+
+import os
+import xml.etree.ElementTree as ET
+import cv2
+import numpy as np
+from tensorflow.keras.utils import to_categorical
+from sklearn.model_selection import train_test_split
+from tensorflow.keras import layers, models
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+import tensorflow as tf
+import matplotlib.pyplot as plt
+
+# Function to parse XML and extract image paths and labels
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+def parse_xml(xml_file):
+    tree = ET.parse(xml_file)
+    root = tree.getroot()
+    images = []
+
+    for object_elem in root.findall('.//object'):  # Find all object elements
+        name = object_elem.find('name').text
+        path = root.find('path').text
+
+        # Assuming you want to use the label as a single character
+        label = ord(name.upper()) - ord('A')  # Convert 'A'-'Z' to 0-25
+
+        images.append((path, label))
+
+    return images
+
+# Function to load and preprocess images
+def load_and_preprocess_images(data, image_size=(128, 128)):
+    images = []
+    labels = []
+    for path, label in data:
+        # Load and preprocess image in RGB
+        img = cv2.imread(path)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # Convert to RGB
+        img = cv2.resize(img, image_size)
+        img = img.astype('float32') / 255.0
+        images.append(img)
+        labels.append(label)
+    return np.array(images), np.array(labels)
+
+# Replace 'your_data_folder' with the path to the folder containing XML files
+data_folder = r'D:\Bangkit Project\Handsight_Trainer\Images'
+xml_files = [os.path.join(data_folder, file) for file in os.listdir(data_folder) if file.endswith('.xml')]
+
+# Parse XML files to get image paths and labels
+data = []
+for xml_file in xml_files:
+    data.extend(parse_xml(xml_file))
+
+print(f"Total data samples: {len(data)}")  # Add this line to check the total number of samples
+
+# Split data into training and testing sets
+train_data, test_data = train_test_split(data, test_size=0.2, random_state=42)
+
+print(f"Number of training samples: {len(train_data)}")  # Add this line to check the number of training samples
+print(f"Number of testing samples: {len(test_data)}")    # Add this line to check the number of testing samples
+
+# Load and preprocess training images
+train_images, train_labels = load_and_preprocess_images(train_data)
+
+# Load and preprocess testing images
+test_images, test_labels = load_and_preprocess_images(test_data)
+
+# Convert labels to one-hot encoding
+train_labels = to_categorical(train_labels, num_classes=26)  # Assuming A-Z, 26 classes
+test_labels = to_categorical(test_labels, num_classes=26)
+
+# Define the model architecture
+model = models.Sequential()
+model.add(layers.Conv2D(32, (3, 3), activation='relu', input_shape=(128, 128, 3)))  # Input shape for RGB
+model.add(layers.MaxPooling2D((2, 2)))
+model.add(layers.Conv2D(64, (3, 3), activation='relu'))
+model.add(layers.MaxPooling2D((2, 2)))
+model.add(layers.Conv2D(128, (3, 3), activation='relu'))
+model.add(layers.MaxPooling2D((2, 2)))
+model.add(layers.Flatten())
+model.add(layers.Dense(512, activation='relu', kernel_initializer='he_normal'))
+model.add(layers.BatchNormalization())
+model.add(layers.Dropout(0.5))
+model.add(layers.Dense(256, activation='relu', kernel_initializer='he_normal'))
+model.add(layers.BatchNormalization())
+model.add(layers.Dropout(0.5))
+model.add(layers.Dense(128, activation='relu', kernel_initializer='he_normal'))
+model.add(layers.BatchNormalization())
+model.add(layers.Dense(26, activation='softmax'))
+
+# Compile the model with a smaller learning rate
+model.compile(optimizer=Adam(learning_rate=0.0001), loss='categorical_crossentropy', metrics=['accuracy'])
+
+# Data augmentation
+datagen = ImageDataGenerator(rotation_range=20, width_shift_range=0.2, height_shift_range=0.2, shear_range=0.2, zoom_range=0.2, horizontal_flip=True)
+
+# Train the model with augmented data
+history = model.fit(datagen.flow(train_images, train_labels, batch_size=64), epochs=500, validation_data=(test_images, test_labels))
+
+# Save the entire model to a HDF5 file
+model.save('model.keras')
+
+# Convert the model to TensorFlow Lite format with normalization options
+def representative_dataset_generator():
+    for image in train_images[:100]:  # Use a subset of the training data
+        yield [np.expand_dims(image, axis=0)]
+
+# Convert the model to TensorFlow Lite format with normalization options
+converter = tf.lite.TFLiteConverter.from_keras_model(model)
+converter.optimizations = [tf.lite.Optimize.DEFAULT]
+converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
+converter.inference_input_type = tf.uint8
+converter.inference_output_type = tf.uint8
+converter.representative_dataset = representative_dataset_generator
+tflite_model = converter.convert()
+
+# Save the TFLite model to a file
+with open('model.tflite', 'wb') as f:
+    f.write(tflite_model)
+
+# Evaluate the model on the test set
+test_loss, test_acc = model.evaluate(test_images, test_labels)
+print(f'Test accuracy: {test_acc}')
+
+# Plot training history
+plt.plot(history.history['accuracy'], label='Training Accuracy')
+plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.legend()
+plt.show()
